@@ -243,6 +243,21 @@ class Score:
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         screen.blit(self.image, self.rect)
 
+#追加機能2
+class Gravity(pg.sprite.Sprite):
+    def __init__(self, life: int):
+        super().__init__()
+        self.life = life
+        self.image = pg.Surface((WIDTH, HEIGHT)) #手順1
+        pg.draw.rect(self.image, (0, 0, 0), pg.Rect(0, 0, WIDTH, HEIGHT)) #手順2
+        self.image.set_alpha(128) #手順3
+        self.rect = self.image.get_rect()
+
+    def update(self):
+        self.life -= 1
+        if self.life < 0:
+            self.kill()
+
 class NeoBeam:
     """
     弾幕に関するクラス
@@ -276,6 +291,7 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    gravitys = pg.sprite.Group() #追加機能2
 
     tmr = 0
     clock = pg.time.Clock()
@@ -292,11 +308,15 @@ def main():
 
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
+            #追加機能2
+            if event.type == pg.KEYDOWN and event.key == pg.K_RETURN and score.value>=200:
+                gravitys.add(Gravity(400)) 
+                score.value -= 200
+
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
-
         for emy in emys:
             if emy.state == "stop" and tmr%emy.interval == 0:
                 # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
@@ -318,6 +338,19 @@ def main():
             time.sleep(2)
             return
 
+        #追加機能2
+        gravitys.update()
+        gravitys.draw(screen)
+
+        for gravity in gravitys:
+            for bomb in pg.sprite.spritecollide(gravity, bombs, True): #Gravity()と爆弾が衝突したら
+                exps.add(Explosion(bomb, 20)) #bombに対してExplosion()表示の生存時間
+                score.value += 1
+                
+            for emy in pg.sprite.spritecollide(gravity, emys, True):
+                exps.add(Explosion(emy, 20))
+                score.value += 10
+        
         bird.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
