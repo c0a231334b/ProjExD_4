@@ -265,6 +265,27 @@ class NeoBeam:
             beams.append(beam)
         return beams
 
+class Shield(pg.sprite.Sprite):
+    active_shield = False
+    def __init__(self, bird, life):
+        super().__init__()
+        self.image = pg.Surface((20, bird.rect.height*2))
+        pg.draw.rect(self.image, (0, 0, 255), (0,0,20,bird.rect.height*2 ))
+        vx, vy = bird.dire
+        angle = math.degrees(math.atan2(-vy, vx))
+        self.image = pg.transform.rotozoom(self.image, angle, 2.0)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = bird.rect.centerx + bird.rect.width*vx
+        self.rect.centery = bird.rect.centery + bird.rect.height*vy
+        self.life = life
+        Shield.active_shield = True
+    def update(self):
+        self.life -= 1
+        if self.life <= 0:
+            Shield.active_shield = False
+            self.kill()
+
+
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -276,6 +297,7 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    Shields = pg.sprite.Group()
 
     tmr = 0
     clock = pg.time.Clock()
@@ -292,6 +314,12 @@ def main():
 
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
+            if event.type == pg.KEYDOWN and event.key == pg.K_s and score.value >= 50:
+                if not Shield.active_shield:
+                    shield = Shield(bird, 400)
+                    Shields.add(shield)
+                    score.value -= 50
+                    
         screen.blit(bg_img, [0, 0])
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
@@ -310,6 +338,9 @@ def main():
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():  # ビームと衝突した爆弾リスト
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
+        for shield2 in pg.sprite.groupcollide(bombs, Shields, True, True).keys(): #爆弾と衝突したシールドリスト
+            exps.add(Explosion(shield2, 50)) #爆弾エフェクト
+            Shield.active_shield = False
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
             bird.change_img(8, screen)  # こうかとん悲しみエフェクト
@@ -327,6 +358,8 @@ def main():
         bombs.draw(screen)
         exps.update()
         exps.draw(screen)
+        Shields.update()
+        Shields.draw(screen)
         score.update(screen)
         pg.display.update()
         tmr += 1
