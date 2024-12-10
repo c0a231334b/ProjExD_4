@@ -338,6 +338,7 @@ def main():
 
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
+
             if event.type == pg.KEYDOWN and event.key == pg.K_e and score.value >= 20:
                 score.value -= 20
                 emps.add(EMP(emys, bombs, screen))
@@ -347,6 +348,12 @@ def main():
             if event.type == pg.KEYDOWN and event.key == pg.K_RETURN and score.value>=200:
                 gravitys.add(Gravity(400)) 
                 score.value -= 200
+
+            #追加機能１　加速度
+            if event.type == pg.KEYDOWN and event.key == pg.K_LSHIFT:
+                bird.speed = 20
+            if event.type == pg.KEYUP and event.key == pg.K_LSHIFT:
+                bird.speed = 10
 
         screen.blit(bg_img, [0, 0])
 
